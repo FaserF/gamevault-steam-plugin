@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import {
-  GameVaultPluginModule,
-  GameVaultPluginModuleMetadataV1,
-} from "../../../src/globals";
-import { GamesModule } from "../../../src/modules/games/games.module";
-import { SteamDupeFinderService } from "./steam-dupe-finder.service";
+  type GameVaultPluginModule,
+  type GameVaultPluginModuleMetadataV1,
+} from "../../../src/globals.js";
+import { GamesModule } from "../../../src/modules/games/games.module.js";
+import { SteamDupeFinderService } from "./steam-dupe-finder.service.js";
 
 @Module({
   imports: [GamesModule],

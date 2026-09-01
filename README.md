@@ -2,6 +2,8 @@
 
 Easily identify duplicate games in your vault that are also present in your Steam library or wishlist. The plugin logs matches for review, ensuring you keep track of your collection.
 
+> **ESM compatibility (GameVault v17.0.1+):** The GameVault backend is now ESM (NodeNext). Plugins must be compiled as ESM with explicit `.js` extensions on relative imports and `import type` for type-only imports. This plugin already follows that structure and is built together with the backend (`pnpm build`), producing a `steam-dupe-finder.plugin.module.js` entry.
+
 ## 🚀 Quick Setup
 
 1. **Download & Install:**

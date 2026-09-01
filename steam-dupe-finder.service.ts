@@ -5,17 +5,18 @@ import {
   OnModuleInit,
 } from "@nestjs/common";
 import { Cron, Timeout } from "@nestjs/schedule";
-import { kebabCase } from "lodash";
 import { stringSimilarity } from "string-similarity-js";
-import { GamesService } from "../../../src/modules/games/games.service";
-import { GamevaultGame } from "../../../src/modules/games/gamevault-game.entity";
-import configuration, { getCensoredConfiguration } from "./configuration";
+import lodash from "lodash";
+const { kebabCase } = lodash;
+import { GamesService } from "../../../src/modules/games/games.service.js";
+import type { GamevaultGame } from "../../../src/modules/games/gamevault-game.entity.js";
+import configuration, { getCensoredConfiguration } from "./configuration.js";
 import {
   GetOwnedGamesResponseWrapper,
   GetWishlistedGamesResponseWrapper,
   SteamGame,
   SteamWishlistItem,
-} from "./models";
+} from "./models.js";
 
 @Injectable()
 export class SteamDupeFinderService implements OnModuleInit {
@@ -35,8 +36,8 @@ export class SteamDupeFinderService implements OnModuleInit {
     await this.findDuplicates();
   }
 
-  @Cron(`*/${configuration.INTERVAL} * * * *`, {
-    disabled: configuration.INTERVAL <= 0,
+  @Cron(`*/${configuration.INTERVAL ?? 24 * 60} * * * *`, {
+    disabled: (configuration.INTERVAL ?? 0) <= 0,
   })
   public async findDuplicates(): Promise<void> {
     try {

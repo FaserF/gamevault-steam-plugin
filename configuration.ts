@@ -1,5 +1,5 @@
 export function parseNumber(
-  environmentVariable: string,
+  environmentVariable: string | undefined,
   defaultValue?: number,
 ): number | undefined {
   const number = Number(environmentVariable);
