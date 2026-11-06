@@ -40,14 +40,14 @@ describe("ZipBuilderUtil", () => {
     assert.equal(zipBuffer.readUInt16LE(eocdOffset + 10), 2);
   });
 
-  test("buildSteamLauncherZip creates complete launcher package with 5 entries", () => {
+  test("buildSteamLauncherZip creates complete launcher package with 7 entries including native PE binaries", () => {
     const zipBuffer = buildSteamLauncherZip(2379780, "Balatro");
-    assert.ok(zipBuffer.length > 200);
+    assert.ok(zipBuffer.length > 5000);
 
     // Verify End of Central Directory signature (PK\x05\x06) at the tail
     const eocdOffset = zipBuffer.length - 22;
     assert.equal(zipBuffer.readUInt32LE(eocdOffset), 0x06054b50);
-    assert.equal(zipBuffer.readUInt16LE(eocdOffset + 8), 5); // 5 total entries
-    assert.equal(zipBuffer.readUInt16LE(eocdOffset + 10), 5);
+    assert.equal(zipBuffer.readUInt16LE(eocdOffset + 8), 7); // 7 total entries
+    assert.equal(zipBuffer.readUInt16LE(eocdOffset + 10), 7);
   });
 });

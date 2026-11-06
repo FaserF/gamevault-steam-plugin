@@ -1,7 +1,7 @@
 {
   "id": "gamevault-steam-plugin",
   "name": "Steam Integration & Metadata Provider",
-  "version": "2.0.0",
+  "version": "2.0.5",
   "author": "Fabian Seitz (FaserF)",
   "contributors": [
     "Alfagun74"

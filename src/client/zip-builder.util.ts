@@ -1,4 +1,5 @@
 import type { ZipEntry } from "../models/steam.models.js";
+import { getSteamLauncherExe } from "./launcher-binary.js";
 
 /**
  * Pre-computed CRC32 lookup table for wire-speed checksums.
@@ -111,10 +112,18 @@ export function buildInMemoryZip(entries: ZipEntry[], mtime: Date = new Date()):
 
 /**
  * Creates a complete virtual launcher ZIP archive for a Steam game containing
- * steam_appid.txt, launch.url, launch.cmd, launch.sh, and README.txt.
+ * steam_appid.txt, launch.url, launch.cmd, launch.sh, native Windows launcher PE binaries
+ * (launch.exe & <GameName>.exe), and README.txt.
  */
 export function buildSteamLauncherZip(appId: number | string, gameName: string): Buffer {
-  return buildInMemoryZip([
+  const launcherExe = getSteamLauncherExe();
+  const sanitizedTitle = (gameName || "game")
+    .replace(/[<>:"/\\|?*]/g, "")
+    .trim() || "game";
+
+  const entries: ZipEntry[] = [
+    { name: "launch.exe", content: launcherExe },
+    { name: `${sanitizedTitle}.exe`, content: launcherExe },
     { name: "steam_appid.txt", content: `${appId}\n` },
     { name: "launch.url", content: `[InternetShortcut]\nURL=steam://run/${appId}\n` },
     { name: "launch.cmd", content: `@echo off\nstart "" "steam://run/${appId}"\n` },
@@ -126,5 +135,7 @@ export function buildSteamLauncherZip(appId: number | string, gameName: string):
       name: "README.txt",
       content: `Steam Virtual Launcher for ${gameName}\nSteam App ID: ${appId}\nLaunch URL: steam://run/${appId}\n`,
     },
-  ]);
+  ];
+
+  return buildInMemoryZip(entries);
 }
