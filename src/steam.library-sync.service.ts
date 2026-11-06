@@ -94,9 +94,13 @@ export class SteamLibrarySyncService implements OnModuleInit {
   }
 
   private async generateVirtualLaunchers(steamGames: SteamGame[]): Promise<void> {
+    const baseFilesDir =
+      (gamevaultConfiguration as any)?.VOLUMES?.FILES ||
+      (gamevaultConfiguration as any)?.FILES_DIR ||
+      "/files";
     const filesDir = configuration.SYNC_SUBDIRECTORY
-      ? path.join(gamevaultConfiguration.FILES_DIR, configuration.SYNC_SUBDIRECTORY)
-      : gamevaultConfiguration.FILES_DIR;
+      ? path.join(baseFilesDir, configuration.SYNC_SUBDIRECTORY)
+      : baseFilesDir;
 
     await ensureDir(filesDir);
 
