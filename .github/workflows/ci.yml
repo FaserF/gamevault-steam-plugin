@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [22.x, 24.x]
+        node-version: [26.x]
 
     steps:
       - name: Checkout Repository
@@ -61,10 +61,10 @@ jobs:
           rm -rf package_staging/types
           cp manifest.json package_staging/ 2>/dev/null || true
           cp README.md LICENSE.md CHANGELOG.md package_staging/ 2>/dev/null || true
-          
+
           cd package_staging
           zip -r ../gamevault-steam-plugin-test.zip .
           cd ..
-          
+
           echo "Package created successfully. Size: $(du -h gamevault-steam-plugin-test.zip | cut -f1)"
           unzip -l gamevault-steam-plugin-test.zip
