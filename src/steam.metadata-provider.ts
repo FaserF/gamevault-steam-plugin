@@ -24,7 +24,7 @@ import type { SteamAppDetailsData } from "./models/steam.models.js";
 @Injectable()
 export class SteamMetadataProviderService extends MetadataProvider {
   override enabled = configuration.METADATA_ENABLED;
-  override request_interval_ms = 300;
+  override request_interval_ms = 1000;
   override readonly slug = "steam";
   override readonly name = "Steam";
   override readonly priority = configuration.METADATA_PRIORITY;
@@ -75,9 +75,7 @@ export class SteamMetadataProviderService extends MetadataProvider {
   ): Promise<GameMetadata> {
     const details = await this.client.getAppDetails(provider_data_id);
     if (!details) {
-      throw new NotFoundException(
-        `Steam game with AppID "${provider_data_id}" not found on Storefront.`,
-      );
+      return this.mapDelistedAppToMetadata(provider_data_id);
     }
 
     return this.mapSteamDetailsToMetadata(details);
@@ -113,14 +111,63 @@ export class SteamMetadataProviderService extends MetadataProvider {
         }
       } catch (err) {
         this.logger.warn({
-          message: `Direct Steam AppID ${steamId} lookup failed; falling back to text search.`,
+          message: `Direct Steam AppID ${steamId} lookup failed; falling back.`,
           error: err,
         });
       }
+
+      // Fallback for delisted or non-storefront Steam items
+      const cleanTitle = title.replace(/\s*\[steam(?:id)?-\d+\]/gi, "").trim();
+      return {
+        title: cleanTitle || `SteamApp-${steamId}`,
+        provider_slug: this.slug,
+        provider_data_id: steamId,
+        cover_url: `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${steamId}/header.jpg`,
+        description: `Steam application (${cleanTitle || steamId}).`,
+      };
     }
 
     // 2. Standard search via string similarity
     return super.getBestMatch(game);
+  }
+
+  private async mapDelistedAppToMetadata(appId: string): Promise<GameMetadata> {
+    const storeUrl = SteamApiClient.makeStoreUrl(appId);
+    const launchUri = SteamApiClient.makeLaunchUri(appId);
+
+    let cover: Media | undefined;
+    const coverCandidates = [
+      `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/library_600x900.jpg`,
+      `https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
+      `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/header.jpg`,
+    ];
+
+    for (const url of coverCandidates) {
+      try {
+        if (this.mediaService?.downloadByUrl) {
+          cover = await this.mediaService.downloadByUrl(url);
+          if (cover) break;
+        }
+      } catch (err) {
+        this.logger.debug?.(`Could not download Steam cover from ${url}: ${err}`);
+      }
+    }
+
+    const metadata: Partial<GameMetadata> = {
+      title: `Steam App ${appId}`,
+      provider_slug: this.slug,
+      provider_data_id: appId,
+      provider_data_url: storeUrl,
+      url_websites: [storeUrl, launchUri],
+      description: `Steam application ${appId}.`,
+      developers: [],
+      publishers: [],
+      genres: [],
+      tags: [],
+      cover,
+    };
+
+    return metadata as GameMetadata;
   }
 
   private async mapSteamDetailsToMetadata(

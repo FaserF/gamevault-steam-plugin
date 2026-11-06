@@ -130,7 +130,11 @@ export class SteamApiClient {
     }
   }
 
-  private async fetchJson<T>(url: string, timeoutMs: number = 10000): Promise<T> {
+  private async fetchJson<T>(
+    url: string,
+    timeoutMs: number = 10000,
+    retries: number = 2,
+  ): Promise<T> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -142,6 +146,12 @@ export class SteamApiClient {
           Accept: "application/json",
         },
       });
+
+      if (response.status === 429 && retries > 0) {
+        this.logger.warn(`Steam API rate limited (HTTP 429). Retrying after 8s...`);
+        await new Promise((resolve) => setTimeout(resolve, 8000));
+        return this.fetchJson<T>(url, timeoutMs, retries - 1);
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
