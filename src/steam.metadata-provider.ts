@@ -16,6 +16,8 @@ import type { DeveloperMetadata } from "../../../src/modules/metadata/developers
 import type { PublisherMetadata } from "../../../src/modules/metadata/publishers/publisher.metadata.entity.js";
 import type { Media } from "../../../src/modules/media/media.entity.js";
 import { SteamApiClient } from "./client/steam-api.client.js";
+import { HtmlToMarkdownUtil } from "./client/html-to-markdown.util.js";
+import { AgeRatingUtil } from "./client/age-rating.util.js";
 import configuration from "./config/configuration.js";
 import type { SteamAppDetailsData } from "./models/steam.models.js";
 
@@ -159,14 +161,8 @@ export class SteamMetadataProviderService extends MetadataProvider {
       }
     }
 
-    // Age rating parse
-    let ageRating: number | undefined;
-    if (data.required_age) {
-      const parsed = Number(data.required_age);
-      if (!isNaN(parsed) && parsed > 0) {
-        ageRating = parsed;
-      }
-    }
+    // Age rating parse across regional rating boards (USK, steam_germany, PEGI, ESRB, etc.)
+    const ageRating = AgeRatingUtil.parse(data);
 
     // Release date
     let releaseDate: Date | undefined;
@@ -176,6 +172,12 @@ export class SteamMetadataProviderService extends MetadataProvider {
         releaseDate = parsedDate;
       }
     }
+
+    // Clean description: convert Steam HTML/BBCode into clean GameVault-compatible Markdown
+    const rawDescription =
+      data.about_the_game || data.detailed_description || data.short_description;
+    const cleanDescription =
+      HtmlToMarkdownUtil.convert(rawDescription) || data.short_description || "";
 
     const metadata: Partial<GameMetadata> = {
       title: data.name,
@@ -189,7 +191,7 @@ export class SteamMetadataProviderService extends MetadataProvider {
       url_trailers: (data.movies ?? [])
         .map((m) => m.mp4?.max || m.webm?.max)
         .filter((url): url is string => Boolean(url)),
-      description: data.detailed_description || data.about_the_game || data.short_description,
+      description: cleanDescription,
       developers: (data.developers ?? []).map((dev) => ({
         name: dev,
         provider_slug: this.slug,
@@ -218,5 +220,12 @@ export class SteamMetadataProviderService extends MetadataProvider {
     };
 
     return metadata as GameMetadata;
+  }
+
+  /**
+   * Resolves the minimum age rating across all available Steam rating boards.
+   */
+  public static parseAgeRating(data: SteamAppDetailsData): number | undefined {
+    return AgeRatingUtil.parse(data);
   }
 }

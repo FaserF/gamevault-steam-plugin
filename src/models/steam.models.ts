@@ -74,6 +74,16 @@ export interface SteamAppDetailsData {
   name: string;
   steam_appid: number;
   required_age: number | string;
+  ratings?: Record<
+    string,
+    {
+      rating?: string;
+      required_age?: string | number;
+      banned?: string;
+      use_age_gate?: string;
+      descriptors?: string;
+    }
+  >;
   is_free: boolean;
   detailed_description?: string;
   about_the_game?: string;

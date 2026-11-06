@@ -1,6 +1,6 @@
 {
   "name": "@faserf/gamevault-steam-plugin",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Universal Steam integration for GameVault: native metadata provider, automated library sync & launcher generator, desktop/browser redirection, and duplicate detection.",
   "type": "module",
   "main": "dist/steam.plugin.module.js",
@@ -10,6 +10,7 @@
     "prebuild": "npm run clean",
     "build": "esbuild src/*.ts src/client/*.ts src/config/*.ts src/models/*.ts --outdir=dist --format=esm --platform=node --target=es2023",
     "watch": "esbuild src/*.ts src/client/*.ts src/config/*.ts src/models/*.ts --outdir=dist --format=esm --platform=node --target=es2023 --watch",
+    "pretest": "npm run build",
     "test": "node --test tests/*.spec.ts",
     "package": "powershell -ExecutionPolicy Bypass -File ./build-local.ps1 -Package"
   },
