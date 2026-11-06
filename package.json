@@ -1,6 +1,6 @@
 {
   "name": "@faserf/gamevault-steam-plugin",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Universal Steam integration for GameVault: native metadata provider, automated library sync & launcher generator, desktop/browser redirection, and duplicate detection.",
   "type": "module",
   "main": "dist/steam.plugin.module.js",

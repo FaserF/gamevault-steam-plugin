@@ -108,3 +108,23 @@ export function buildInMemoryZip(entries: ZipEntry[], mtime: Date = new Date()):
 
   return Buffer.concat([...localHeaders, ...centralHeaders, eocd]);
 }
+
+/**
+ * Creates a complete virtual launcher ZIP archive for a Steam game containing
+ * steam_appid.txt, launch.url, launch.cmd, launch.sh, and README.txt.
+ */
+export function buildSteamLauncherZip(appId: number | string, gameName: string): Buffer {
+  return buildInMemoryZip([
+    { name: "steam_appid.txt", content: `${appId}\n` },
+    { name: "launch.url", content: `[InternetShortcut]\nURL=steam://run/${appId}\n` },
+    { name: "launch.cmd", content: `@echo off\nstart "" "steam://run/${appId}"\n` },
+    {
+      name: "launch.sh",
+      content: `#!/usr/bin/env sh\nxdg-open "steam://run/${appId}" || open "steam://run/${appId}" 2>/dev/null || sensible-browser "steam://run/${appId}"\n`,
+    },
+    {
+      name: "README.txt",
+      content: `Steam Virtual Launcher for ${gameName}\nSteam App ID: ${appId}\nLaunch URL: steam://run/${appId}\n`,
+    },
+  ]);
+}

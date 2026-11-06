@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Cron, Timeout } from "@nestjs/schedule";
 import { stringSimilarity } from "string-similarity-js";
 import lodash from "lodash";
@@ -24,7 +24,7 @@ export class SteamDupeFinderService implements OnModuleInit {
     configuration.STORE_COUNTRY,
   );
 
-  constructor(private readonly gamesService: GamesService) {}
+  constructor(@Inject(GamesService) private readonly gamesService: GamesService) {}
 
   onModuleInit() {
     this.logger.log({

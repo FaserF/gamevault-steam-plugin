@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Cron, Timeout } from "@nestjs/schedule";
 import fsExtra from "fs-extra";
 import path from "node:path";
@@ -9,7 +9,7 @@ import { ProgressService } from "../../../src/modules/progresses/progress.servic
 import { State } from "../../../src/modules/progresses/models/state.enum.js";
 import gamevaultConfiguration from "../../../src/configuration.js";
 import { SteamApiClient } from "./client/steam-api.client.js";
-import { buildInMemoryZip } from "./client/zip-builder.util.js";
+import { buildSteamLauncherZip } from "./client/zip-builder.util.js";
 import configuration, { getCensoredConfiguration } from "./config/configuration.js";
 import type { SteamGame } from "./models/steam.models.js";
 
@@ -28,9 +28,9 @@ export class SteamLibrarySyncService implements OnModuleInit {
   );
 
   constructor(
-    private readonly gamesService: GamesService,
-    private readonly usersService: UsersService,
-    private readonly progressService: ProgressService,
+    @Inject(GamesService) private readonly gamesService: GamesService,
+    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(ProgressService) private readonly progressService: ProgressService,
   ) {}
 
   onModuleInit() {
@@ -118,7 +118,10 @@ export class SteamLibrarySyncService implements OnModuleInit {
       }
 
       try {
-        const zipBuffer = buildInMemoryZip(game.appid, game.name);
+        const zipBuffer = buildSteamLauncherZip(
+          game.appid,
+          game.name || `SteamApp-${game.appid}`,
+        );
         await writeFile(targetZipPath, zipBuffer);
         createdCount++;
         this.logger.debug(`Created virtual launcher: ${zipFilename}`);

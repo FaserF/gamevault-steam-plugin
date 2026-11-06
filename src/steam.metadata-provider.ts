@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { MetadataProvider } from "../../../src/modules/metadata/providers/abstract.metadata-provider.service.js";
 import { MetadataService } from "../../../src/modules/metadata/metadata.service.js";
 import { GameMetadataService } from "../../../src/modules/metadata/games/game.metadata.service.js";
@@ -37,13 +37,13 @@ export class SteamMetadataProviderService extends MetadataProvider {
   );
 
   constructor(
-    metadataService: MetadataService,
-    gameMetadataService: GameMetadataService,
-    developerMetadataService: DeveloperMetadataService,
-    publisherMetadataService: PublisherMetadataService,
-    tagMetadataService: TagMetadataService,
-    genreMetadataService: GenreMetadataService,
-    mediaService: MediaService,
+    @Inject(MetadataService) metadataService: MetadataService,
+    @Inject(GameMetadataService) gameMetadataService: GameMetadataService,
+    @Inject(DeveloperMetadataService) developerMetadataService: DeveloperMetadataService,
+    @Inject(PublisherMetadataService) publisherMetadataService: PublisherMetadataService,
+    @Inject(TagMetadataService) tagMetadataService: TagMetadataService,
+    @Inject(GenreMetadataService) genreMetadataService: GenreMetadataService,
+    @Inject(MediaService) mediaService: MediaService,
   ) {
     super(
       metadataService,
