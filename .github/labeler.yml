@@ -1,0 +1,29 @@
+core:
+  - 'src/steam.plugin.module.ts'
+  - 'src/index.ts'
+  - 'manifest.json'
+
+metadata:
+  - 'src/services/steam-metadata.provider.ts'
+
+library-sync:
+  - 'src/services/steam-library-sync.service.ts'
+  - 'src/client/zip-builder.util.ts'
+
+duplicate-finder:
+  - 'src/services/steam-dupe-finder.service.ts'
+
+steam-client:
+  - 'src/client/steam-api.client.ts'
+
+configuration:
+  - 'src/config/configuration.ts'
+
+tests:
+  - 'tests/**/*'
+
+ci-cd:
+  - '.github/**/*'
+
+documentation:
+  - '*.md'

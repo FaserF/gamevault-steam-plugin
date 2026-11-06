@@ -1,0 +1,55 @@
+{
+  "name": "@faserf/gamevault-steam-plugin",
+  "version": "2.0.0",
+  "description": "Universal Steam integration for GameVault: native metadata provider, automated library sync & launcher generator, desktop/browser redirection, and duplicate detection.",
+  "type": "module",
+  "main": "dist/steam.plugin.module.js",
+  "types": "dist/steam.plugin.module.d.ts",
+  "scripts": {
+    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+    "prebuild": "npm run clean",
+    "build": "esbuild src/*.ts src/client/*.ts src/config/*.ts src/models/*.ts --outdir=dist --format=esm --platform=node --target=es2023",
+    "watch": "esbuild src/*.ts src/client/*.ts src/config/*.ts src/models/*.ts --outdir=dist --format=esm --platform=node --target=es2023 --watch",
+    "test": "node --test tests/*.spec.ts",
+    "package": "powershell -ExecutionPolicy Bypass -File ./build-local.ps1 -Package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FaserF/gamevault-steam-plugin.git"
+  },
+  "keywords": [
+    "gamevault",
+    "plugin",
+    "steam",
+    "metadata",
+    "library-sync",
+    "launcher",
+    "desktop-redirect",
+    "duplicate-finder",
+    "gaming"
+  ],
+  "author": "Fabian Seitz <fabian@fabiseitz.de> (https://github.com/FaserF)",
+  "contributors": [
+    "Alfagun74 (https://github.com/Alfagun74)"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FaserF/gamevault-steam-plugin/issues"
+  },
+  "homepage": "https://github.com/FaserF/gamevault-steam-plugin#readme",
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/schedule": "^5.0.0",
+    "fs-extra": "^11.3.0",
+    "lodash": "^4.17.21",
+    "sanitize-filename": "^1.6.3",
+    "string-similarity-js": "^2.1.4"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^22.13.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.8.0"
+  }
+}

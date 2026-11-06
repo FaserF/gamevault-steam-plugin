@@ -1,0 +1,25 @@
+{
+  "id": "gamevault-steam-plugin",
+  "name": "Steam Integration & Metadata Provider",
+  "version": "2.0.0",
+  "author": "Fabian Seitz (FaserF)",
+  "contributors": [
+    "Alfagun74"
+  ],
+  "description": "Universal Steam integration for GameVault: native Steam metadata scraper, library sync with auto-launcher zip generation, seamless steam:// and web redirect launch integration, and library/wishlist duplicate detection.",
+  "website": "https://github.com/FaserF/gamevault-steam-plugin",
+  "entrypoint": "steam.plugin.module.js",
+  "compatibility": {
+    "gamevault": ">=17.0.0"
+  },
+  "keywords": [
+    "steam",
+    "metadata",
+    "library",
+    "sync",
+    "launcher",
+    "duplicates",
+    "gamevault"
+  ],
+  "license": "MIT"
+}

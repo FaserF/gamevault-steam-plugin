@@ -1,0 +1,187 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Type of release (stable, beta, nightly)"
+        required: true
+        default: "stable"
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+      bump_level:
+        description: "Bump Level (patch, minor, major)"
+        required: false
+        default: "minor"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      version_override:
+        description: "Manually override new version (e.g. 2.0.0). Leave empty for auto calculation."
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-release
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  determine-version:
+    name: Determine Release Version & Changelog
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.calc.outputs.version }}
+      tag: ${{ steps.calc.outputs.tag }}
+      is_prerelease: ${{ steps.calc.outputs.is_prerelease }}
+      from_tag: ${{ steps.calc.outputs.from_tag }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate Version & Tag
+        id: calc
+        shell: bash
+        env:
+          RELEASE_TYPE: ${{ github.event.inputs.release_type }}
+          BUMP_LEVEL: ${{ github.event.inputs.bump_level }}
+          OVERRIDE: ${{ github.event.inputs.version_override }}
+        run: |
+          git fetch --tags --force 2>/dev/null || true
+          
+          LATEST_TAG=$(git tag -l "v*" --sort=-v:refname 2>/dev/null | head -n 1)
+          echo "Latest tag: ${LATEST_TAG}"
+          echo "from_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+
+          if [ -n "$OVERRIDE" ]; then
+            VERSION="$OVERRIDE"
+          elif [ -n "$LATEST_TAG" ]; then
+            CLEAN_VER="${LATEST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CLEAN_VER"
+            MAJOR=${MAJOR:-2}
+            MINOR=${MINOR:-0}
+            PATCH=${PATCH:-0}
+            
+            if [ "$BUMP_LEVEL" = "major" ]; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+            elif [ "$BUMP_LEVEL" = "minor" ]; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          else
+            VERSION="2.0.0"
+          fi
+
+          if [ "$RELEASE_TYPE" = "beta" ]; then
+            TAG="v${VERSION}-beta"
+            IS_PRE="true"
+          elif [ "$RELEASE_TYPE" = "nightly" ]; then
+            TAG="v${VERSION}-nightly.$(date +'%Y%m%d')"
+            IS_PRE="true"
+          else
+            TAG="v${VERSION}"
+            IS_PRE="false"
+          fi
+
+          echo "Calculated version: ${VERSION}"
+          echo "Calculated tag: ${TAG}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRE}" >> $GITHUB_OUTPUT
+
+  build-and-release:
+    name: Build Bundle & Publish GitHub Release
+    needs: determine-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Build Production Bundle
+        run: npm run build
+
+      - name: Execute Tests
+        run: npm test
+
+      - name: Generate Changelog Notes
+        env:
+          FROM_TAG: ${{ needs.determine-version.outputs.from_tag }}
+          VERSION: ${{ needs.determine-version.outputs.tag }}
+        run: |
+          FROM_ARG=""
+          if [ -n "$FROM_TAG" ]; then
+            FROM_ARG="--from-tag $FROM_TAG"
+          fi
+          python3 .github/scripts/generate_changelog.py $FROM_ARG --version "$VERSION" > release_notes.md
+          cat release_notes.md
+
+      - name: Package Release ZIP
+        env:
+          VERSION: ${{ needs.determine-version.outputs.version }}
+        run: |
+          mkdir -p release_package
+          cp -r dist/* release_package/
+          rm -rf release_package/types
+          cp manifest.json release_package/ 2>/dev/null || true
+          cp README.md LICENSE.md CHANGELOG.md release_package/ 2>/dev/null || true
+          
+          ZIP_NAME="gamevault-steam-plugin-v${VERSION}.zip"
+          cd release_package
+          zip -r "../${ZIP_NAME}" .
+          cd ..
+          
+          echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+          sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
+
+      - name: Create Git Tag & Push
+        env:
+          TAG: ${{ needs.determine-version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.determine-version.outputs.tag }}
+          name: "GameVault Steam Plugin ${{ needs.determine-version.outputs.tag }}"
+          body_path: release_notes.md
+          prerelease: ${{ needs.determine-version.outputs.is_prerelease == 'true' }}
+          draft: false
+          files: |
+            ${{ env.ZIP_NAME }}
+            ${{ env.ZIP_NAME }}.sha256

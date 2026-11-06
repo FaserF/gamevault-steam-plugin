@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '*.md'
+      - '.gitignore'
+  pull_request:
+    branches: [ master, main ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '*.md'
+      - '.gitignore'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Node.js ${{ matrix.node-version }} Build & Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Plugin Bundle (ESM)
+        run: npm run build
+
+      - name: Execute Unit Tests
+        run: npm test
+
+      - name: Verify Package Archive Structure
+        shell: bash
+        run: |
+          mkdir -p package_staging
+          cp -r dist/* package_staging/
+          rm -rf package_staging/types
+          cp manifest.json package_staging/ 2>/dev/null || true
+          cp README.md LICENSE.md CHANGELOG.md package_staging/ 2>/dev/null || true
+          
+          cd package_staging
+          zip -r ../gamevault-steam-plugin-test.zip .
+          cd ..
+          
+          echo "Package created successfully. Size: $(du -h gamevault-steam-plugin-test.zip | cut -f1)"
+          unzip -l gamevault-steam-plugin-test.zip
